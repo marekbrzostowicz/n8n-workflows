@@ -1,0 +1,349 @@
+{
+  "name": "Query_Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        920,
+        -660
+      ],
+      "id": "7880f6e1-312f-4aa5-97a6-b36915744f37",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sql",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -780,
+        -660
+      ],
+      "id": "559b386e-fd08-4a56-ba90-99c4ef12c4b8",
+      "name": "Webhook",
+      "webhookId": "946dd447-65d2-47fb-9abd-15e36e13f17c"
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body.sheet_1 }}/values/Arkusz1 ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        -660
+      ],
+      "id": "00051a17-1434-4062-a020-8cdada5e5364",
+      "name": "Get Datase Structure",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "de84d70d-b86e-4730-8157-fd9157c95099",
+              "name": "values",
+              "value": "={{ $json.values }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -360,
+        -660
+      ],
+      "id": "8b7375dd-cceb-468c-b2ca-3318d09431a9",
+      "name": "Extract Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.all();\nlet rawData = inputData[0].json;\n\n\nif (!Array.isArray(rawData)) {\n    for (let key in rawData) {\n        if (Array.isArray(rawData[key])) {\n            rawData = rawData[key];\n            break;\n        }\n    }\n}\n\nfunction processToTableStructure(data) {\n    const tables = [];\n    const tableNames = [];\n    let i = 0;\n    \n    while (i < data.length) {\n        \n        if (Array.isArray(data[i]) && data[i].length === 1) {\n            const tableName = data[i][0];\n            \n            \n            if (i + 1 < data.length && Array.isArray(data[i + 1])) {\n                const columnNames = data[i + 1];\n                \n                \n                if (i + 2 < data.length && Array.isArray(data[i + 2])) {\n                    const columnTypes = data[i + 2];\n                    \n                    \n                    const table = {\n                        table_name: tableName,\n                        columns: []\n                    };\n                    \n                    \n                    for (let j = 0; j < columnNames.length && j < columnTypes.length; j++) {\n                        table.columns.push({\n                            name: columnNames[j],\n                            type: columnTypes[j]\n                        });\n                    }\n                    \n                    tables.push(table);\n                    tableNames.push(tableName);\n                    i += 3; \n                } else {\n                    i++;\n                }\n            } else {\n                i++;\n            }\n        } else {\n            i++;\n        }\n    }\n    \n    return { tables, tableNames };\n}\n\n\nconst result = processToTableStructure(rawData);\n\nfunction createTextDescription(tables) {\n    let description = \"STRUKTURA BAZY DANYCH:\\n\\n\";\n    \n    tables.forEach(table => {\n        description += `TABELA: ${table.table_name}\\n`;\n        description += \"Kolumny:\\n\";\n        \n        table.columns.forEach(column => {\n            description += `- ${column.name} (${column.type})\\n`;\n        });\n        \n        description += \"\\n\";\n    });\n    \n    return description;\n}\n\nconst processedData = processToTableStructure(rawData);\nconst textDescription = createTextDescription(processedData.tables);\n\n\nreturn [\n    {\n        json: {\n            database_structure: textDescription\n        }\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -660
+      ],
+      "id": "596e3523-2f4d-4b4e-968e-924b584fa3aa",
+      "name": "Format Database Structure"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Masz strukturę bazy danych:\n{{ $json.database_structure }}\n\nUżytkownik pyta: {{ $('Webhook').item.json.body.prompt }}\n\nOdpowiedz w formacie:\n[Opis co robi zapytanie] | [Kod SQL]\n\nPrzykład:\nZwraca wszystkich użytkowników starszych niż 25 lat | SELECT * FROM users WHERE age > 25\n\nZwróć tylko jedną linię tekstu z opisem i kodem SQL oddzielone znakiem |"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        60,
+        -660
+      ],
+      "id": "47b6a33c-60ed-4eca-93ec-f6558afea2f0",
+      "name": "Generate SQL Query",
+      "credentials": {
+        "openAiApi": {
+          "id": "fKPhJ08e5Bmlzg5Y",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json.message.content;\n\nfunction parseAiResponse(response) {\n\n    if (typeof response !== 'string') {\n        return {\n            error: \"Response is not a string\",\n            raw_response: response\n        };\n    }\n    \n    const parts = response.split('|');\n    \n    if (parts.length >= 2) {\n\n        return {\n            description: parts[0].trim(),\n            sql_query: parts[1].trim()\n        };\n    } else {\n\n        return {\n            description: \"SQL Query\",\n            sql_query: response.trim()\n        };\n    }\n}\n\nconst parsedResponse = parseAiResponse(inputData);\n\nreturn [\n    {\n        json: parsedResponse\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        -600
+      ],
+      "id": "f6d1299a-ab9c-4aa7-88ce-b89be32cf00a",
+      "name": "Parse AI response"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Webhook').item.json.body.sheet_2 }}/values/Arkusz1!A{{ $json.valuesLength }}?valueInputOption=USER_ENTERED",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"values\": [\n    [\n      \"{{ $json.description }}\",\n      \"{{ $json.sql_query }}\"\n    ]\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1160,
+        -760
+      ],
+      "id": "56ca2ace-ddea-42c3-8593-148d556daec2",
+      "name": "Put Data",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Webhook').item.json.body.sheet_2 }}:batchUpdate ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"repeatCell\": {\n        \"range\": {\n          \"sheetId\": 0,\n          \"startRowIndex\": {{ $json.valuesLength - 1 }},\n          \"endRowIndex\": {{ $json.valuesLength }},\n          \"startColumnIndex\": 0,\n          \"endColumnIndex\": 1\n        },\n        \"cell\": {\n          \"userEnteredFormat\": {\n            \"backgroundColor\": {\n              \"red\": 0.7,\n              \"green\": 0.8,\n              \"blue\": 1.0\n            },\n            \"textFormat\":{\n                \"bold\": true,\n                \"foregroundColor\": {\n                    \"red\": 0.0,\n                    \"green\": 0.0,\n                    \"blue\": 0.0\n                }\n            }\n          }\n        },\n        \"fields\": \"userEnteredFormat\"\n      }\n    },\n    {\n      \"repeatCell\": {\n        \"range\": {\n          \"sheetId\": 0,\n          \"startRowIndex\": {{ $json.valuesLength - 1 }},\n          \"endRowIndex\": {{ $json.valuesLength }},\n          \"startColumnIndex\": 1,\n          \"endColumnIndex\": 2\n        },\n        \"cell\": {\n          \"userEnteredFormat\": {\n            \"backgroundColor\": {\n              \"red\": 0.8,\n              \"green\": 1.0,\n              \"blue\": 0.8\n            },\n            \"textFormat\": {\n              \"bold\": true,\n              \"foregroundColor\": {\n                \"red\": 0.0,\n                \"green\": 0.0,\n                \"blue\": 0.0\n              }\n            }\n          }\n        },\n        \"fields\": \"userEnteredFormat\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1160,
+        -580
+      ],
+      "id": "3a87258b-3d1c-4213-9664-277a10849e70",
+      "name": "Update Style",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Webhook').item.json.body.sheet_2 }}/values/Arkusz1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        -760
+      ],
+      "id": "d50c08b1-99fe-46d2-a218-0f1150ec2d4d",
+      "name": "Get Length",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\nif (!inputData.values || inputData.values.length === 0) {\n  return [\n    {\n      json: {\n        valuesLength: 1\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      valuesLength: inputData.values.length + 1\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        -760
+      ],
+      "id": "b1b02063-8ce2-4eb5-8c7a-2e64a8d78e8b",
+      "name": "Parse Length"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Put Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Style",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Datase Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Datase Structure": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "Format Database Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Database Structure": {
+      "main": [
+        [
+          {
+            "node": "Generate SQL Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate SQL Query": {
+      "main": [
+        [
+          {
+            "node": "Parse AI response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Length": {
+      "main": [
+        [
+          {
+            "node": "Parse Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Length": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bea40cda-16d4-49d4-84f1-9f02210c21f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d0151dd8147ef4ee641c96a3c41194b7e3a63fac35a49bcf7702fcca4a157656"
+  },
+  "id": "2HW787D61btjRBzz",
+  "tags": []
+}
