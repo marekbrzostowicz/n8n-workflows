@@ -75,17 +75,3 @@ The first sheet must contain your database visualization in this **exact format*
 This sheet will contain the **execution results** from the workflow. The workflow will automatically populate this sheet with query results and processing logs.
 
 ![Results Sheet Example](https://github.com/user-attachments/assets/1ce7f2e0-6532-4965-9173-617de4a8961d)
-
-## Additional Information
-
-- **Supported databases**: Compatible with standard SQL databases
-- **Scheduling**: Configure triggers in n8n for automated execution
-- **Error handling**: Built-in error logging to results sheet
-- **Security**: Uses OAuth 2.0 for secure Google Sheets access
-
-## Troubleshooting
-
-- Ensure Google Sheets API is enabled and properly configured
-- Verify webhook URLs are correct and accessible
-- Check that sheet IDs are valid and sheets are accessible
-- Confirm database connection parameters are properly set
