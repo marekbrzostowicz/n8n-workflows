@@ -9,10 +9,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.1,
-      "position": [
-        920,
-        -660
-      ],
+      "position": [920, -660],
       "id": "7880f6e1-312f-4aa5-97a6-b36915744f37",
       "name": "Merge"
     },
@@ -24,10 +21,7 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        -780,
-        -660
-      ],
+      "position": [-780, -660],
       "id": "559b386e-fd08-4a56-ba90-99c4ef12c4b8",
       "name": "Webhook",
       "webhookId": "946dd447-65d2-47fb-9abd-15e36e13f17c"
@@ -41,16 +35,13 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        -560,
-        -660
-      ],
+      "position": [-560, -660],
       "id": "00051a17-1434-4062-a020-8cdada5e5364",
       "name": "Get Datase Structure",
       "credentials": {
         "oAuth2Api": {
           "id": "Btc1ow7bfxaGcs7n",
-          "name": "Unnamed credential 2"
+          "name": "OAuth2"
         }
       }
     },
@@ -70,10 +61,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        -360,
-        -660
-      ],
+      "position": [-360, -660],
       "id": "8b7375dd-cceb-468c-b2ca-3318d09431a9",
       "name": "Extract Data"
     },
@@ -83,10 +71,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -160,
-        -660
-      ],
+      "position": [-160, -660],
       "id": "596e3523-2f4d-4b4e-968e-924b584fa3aa",
       "name": "Format Database Structure"
     },
@@ -101,7 +86,7 @@
         "messages": {
           "values": [
             {
-              "content": "=Masz strukturę bazy danych:\n{{ $json.database_structure }}\n\nUżytkownik pyta: {{ $('Webhook').item.json.body.prompt }}\n\nOdpowiedz w formacie:\n[Opis co robi zapytanie] | [Kod SQL]\n\nPrzykład:\nZwraca wszystkich użytkowników starszych niż 25 lat | SELECT * FROM users WHERE age > 25\n\nZwróć tylko jedną linię tekstu z opisem i kodem SQL oddzielone znakiem |"
+              "content": "=You have the database structure:\n{{ $json.database_structure }}\n\nUser asks: {{ $('Webhook').item.json.body.prompt }}\n\nRespond in the format:\n[Description of what the query does] | [SQL Code]\n\nExample:\nReturns all users older than 25 years | SELECT * FROM users WHERE age > 25\n\nReturn only a single line of text with the description and SQL code separated by the | character"
             }
           ]
         },
@@ -109,10 +94,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [
-        60,
-        -660
-      ],
+      "position": [60, -660],
       "id": "47b6a33c-60ed-4eca-93ec-f6558afea2f0",
       "name": "Generate SQL Query",
       "credentials": {
@@ -128,10 +110,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        600,
-        -600
-      ],
+      "position": [600, -600],
       "id": "f6d1299a-ab9c-4aa7-88ce-b89be32cf00a",
       "name": "Parse AI response"
     },
@@ -148,16 +127,13 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1160,
-        -760
-      ],
+      "position": [1160, -760],
       "id": "56ca2ace-ddea-42c3-8593-148d556daec2",
       "name": "Put Data",
       "credentials": {
         "oAuth2Api": {
           "id": "Btc1ow7bfxaGcs7n",
-          "name": "Unnamed credential 2"
+          "name": "OAuth2"
         }
       }
     },
@@ -174,16 +150,13 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1160,
-        -580
-      ],
+      "position": [1160, -580],
       "id": "3a87258b-3d1c-4213-9664-277a10849e70",
       "name": "Update Style",
       "credentials": {
         "oAuth2Api": {
           "id": "Btc1ow7bfxaGcs7n",
-          "name": "Unnamed credential 2"
+          "name": "OAuth2"
         }
       }
     },
@@ -196,16 +169,13 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        460,
-        -760
-      ],
+      "position": [460, -760],
       "id": "d50c08b1-99fe-46d2-a218-0f1150ec2d4d",
       "name": "Get Length",
       "credentials": {
         "oAuth2Api": {
           "id": "Btc1ow7bfxaGcs7n",
-          "name": "Unnamed credential 2"
+          "name": "OAuth2"
         }
       }
     },
@@ -215,10 +185,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        700,
-        -760
-      ],
+      "position": [700, -760],
       "id": "b1b02063-8ce2-4eb5-8c7a-2e64a8d78e8b",
       "name": "Parse Length"
     }
