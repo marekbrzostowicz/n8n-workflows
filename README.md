@@ -75,3 +75,5 @@ The first sheet must contain your database visualization in this **exact format*
 This sheet will contain the **execution results** from the workflow. The workflow will automatically populate this sheet with query results and processing logs.
 
 ![Results Sheet Example](https://github.com/user-attachments/assets/1ce7f2e0-6532-4965-9173-617de4a8961d)
+
+_____
