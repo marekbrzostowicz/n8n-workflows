@@ -1,0 +1,613 @@
+{
+  "name": "Testing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        -340
+      ],
+      "id": "16b9aa46-7819-4a84-bcb7-8b08fedba991",
+      "name": "Webhook",
+      "webhookId": "dcc3522c-8990-4997-b934-66e09a8a57a5"
+    },
+    {
+      "parameters": {
+        "jsCode": "function flatten(obj, prefix = '') {\n  let result = {};\n\n  if (typeof obj !== 'object' || obj === null) return result;\n\n  for (const [key, value] of Object.entries(obj)) {\n    const fullKey = prefix ? `${prefix}_${key}` : key;\n\n    if (Array.isArray(value)) {\n      if (value.length > 0 && typeof value[0] === 'object') {\n        value.forEach((v, i) => {\n          Object.assign(result, flatten(v, `${fullKey}_${i}`));\n        });\n      } else {\n        result[fullKey] = value.join(', ');\n      }\n    } else if (typeof value === 'object' && value !== null) {\n      Object.assign(result, flatten(value, fullKey));\n    } else {\n      result[fullKey] = value;\n    }\n  }\n\n  return result;\n}\n\n\nconst output = items.map(item => {\n\n  const data = item.json || item;\n  return { json: flatten(data) };\n});\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -340
+      ],
+      "id": "19c6e6cf-c412-4d42-85a3-0479590cee47",
+      "name": "Flatten Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75d99550-c449-4269-a06c-0406ad32984a",
+              "name": "body_sheetName",
+              "value": "={{ $json.body_sheetName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -440,
+        -560
+      ],
+      "id": "01098ff8-caea-4ba3-86c5-4c69f7e07ae3",
+      "name": "Extract ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\nconst uniqueKeys = new Set();\n\nfor (const item of inputItems) {\n  for (const key in item.json) {\n    uniqueKeys.add(key);\n  }\n}\n\nreturn { uniqueKeys: Array.from(uniqueKeys) };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -420
+      ],
+      "id": "590f8760-be19-46b6-87de-2ef1560d27f0",
+      "name": "Extract Columns"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobierz dane wejściowe\nconst input = items[0]?.json || items[0] || {};\n\n// Grupowanie danych\nconst grouped = {};\nlet hasMatches = false;\n\nfor (const key in input) {\n  // Sprawdź, czy klucz pasuje do formatu body_response_(\\d+)_(.+) lub body_response_(.+)\n  const match = key.match(/^body_response_(?:(\\d+)_)?(.+)$/);\n  if (match) {\n    hasMatches = true;\n    // Grupa to numer (np. \"15\") lub \"default\" jeśli brak numeru\n    const group = match[1] || 'default';\n    const field = match[2];\n\n    if (!grouped[group]) {\n      grouped[group] = {};\n    }\n    grouped[group][field] = input[key];\n  }\n}\n\n// Jeśli są dopasowania, zwróć zgrupowane dane; w przeciwnym razie zwróć pustą tablicę\nconst rows = hasMatches ? Object.values(grouped) : [];\n\nreturn rows.map(row => ({ json: row }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        -340
+      ],
+      "id": "529f2ac7-9340-4031-8e2d-1c95b26c77f3",
+      "name": "Clean Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const values = items[0].json.values;\n\nconst lastRow = values && Array.isArray(values) ? values.length + 1 : 1;\n\nreturn [\n  {\n    json: {\n      lastRow\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -120
+      ],
+      "id": "ab6348d5-4405-47bb-a3d0-9f31fca05194",
+      "name": "Count Length"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all()[0].json;\nconst uniqueKeysCount = data.uniqueKeys.length;\nconst startIndex = uniqueKeysCount + 1; \nconst numColumnsToClear = 10; \nconst lastRow = data.lastRow; \n\n\nconst getColumnLetter = (index) => {\n  return String.fromCharCode(64 + index); \n};\n\n\nconst ranges = [];\nfor (let i = 0; i < numColumnsToClear; i++) {\n  const colIndex = startIndex + i;\n  const colLetter = getColumnLetter(colIndex);\n  ranges.push(`Arkusz1!${colLetter}${lastRow}:${colLetter}`); \n}\n\n\nreturn [{\n  json: {\n    ranges: ranges,\n    body_sheetName: data.body_sheetName\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        -20
+      ],
+      "id": "d4724dda-be13-4cf2-ace4-6c7375c5aca8",
+      "name": "Count Col to Delete"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body_sheetName }}/values:batchClear",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ranges\": {{ JSON.stringify($json.ranges) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        -20
+      ],
+      "id": "08cb1b49-f9a3-4a88-8641-b2a2b685ab14",
+      "name": "POST | Delete Columns",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body_sheetName }}/values/Arkusz1!A:A",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -440,
+        -120
+      ],
+      "id": "0332ce80-1d21-4da5-a445-d95eda74ed59",
+      "name": "GET | Get Length",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        280,
+        -360
+      ],
+      "id": "985a3120-a798-4632-900d-e5882243f36d",
+      "name": "Merge Id & Columns Name & Last Row"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        80,
+        -540
+      ],
+      "id": "fd74f353-bb51-4ad5-b3b2-94cefd72aa6d",
+      "name": "Merge ID & Columns Name"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body_sheetName }}/values/Arkusz1!A{{ $json.lastRow+1 }}?valueInputOption=RAW",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"values\": [ $(\"Extract Columns\").item.json.uniqueKeys ] } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        -460
+      ],
+      "id": "00db6e05-b471-4894-a3ee-7d0084ffeb9e",
+      "name": "PUT | Columns Name",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body_sheetName }}:batchUpdate\n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"repeatCell\": {\n        \"range\": {\n          \"sheetId\": 0,\n          \"startRowIndex\": {{ $json.lastRow - 1 }},\n          \"endRowIndex\": {{ $json.lastRow }},\n          \"startColumnIndex\": 0,\n          \"endColumnIndex\": {{ $json.uniqueKeys.length }}\n        },\n        \"cell\": {\n          \"userEnteredFormat\": {\n            \"backgroundColor\": {\n              \"red\": 0.56,\n              \"green\": 0.93,\n              \"blue\": 0.56\n            }\n          }\n        },\n        \"fields\": \"userEnteredFormat.backgroundColor\"\n      }\n    },\n    {\n      \"repeatCell\": {\n        \"range\": {\n          \"sheetId\": 0,\n          \"startRowIndex\": {{ $json.lastRow  }},\n          \"endRowIndex\": {{ $json.lastRow + 1 }},\n          \"startColumnIndex\": 0,\n          \"endColumnIndex\": {{ $json.uniqueKeys.length }}\n        },\n        \"cell\": {\n          \"userEnteredFormat\": {\n            \"textFormat\": {\n              \"bold\": true\n            },\n            \"backgroundColor\": {\n              \"red\": 0.8,\n              \"green\": 0.8,\n              \"blue\": 0.8\n            }\n          }\n        },\n        \"fields\": \"userEnteredFormat(textFormat,backgroundColor)\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        -240
+      ],
+      "id": "396df604-3f81-4483-a6e6-93e9ce4c2bb8",
+      "name": "POST | Style Columns",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        740,
+        -540
+      ],
+      "id": "d1af28dc-7f45-474e-9aae-dadb009938c6",
+      "name": "Merge All Data"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        940,
+        -360
+      ],
+      "id": "22662059-7d2a-4fb1-b435-4f35e1040ae6",
+      "name": "Merge All Data1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      values: items.map(item => Object.values(item.json))\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -360
+      ],
+      "id": "c9f052e2-706f-4203-a02a-22d64e699b15",
+      "name": "Map Data for Sheet"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('PUT | Columns Name').first().json.spreadsheetId }}/values/Arkusz1!A{{ $('Count Length').first().json.lastRow + 2}}?valueInputOption=RAW",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"values\": {{ JSON.stringify($json.values) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        -360
+      ],
+      "id": "fb851543-2735-4e15-9fda-ae3ab7738049",
+      "name": "PUT | Append Data to Sheet",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.body.sheetName }}/values/Arkusz1!A{{ $json.lastRow }}?valueInputOption=RAW",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { values: [ [ \"URL\", \"\", $json.body.url ] ] } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        160
+      ],
+      "id": "af3055b2-7a97-4fba-b68a-cfd2cc9c0a2e",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Btc1ow7bfxaGcs7n",
+          "name": "OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75981bdc-73d1-4353-a6f6-67d181757539",
+              "name": "body.url",
+              "value": "={{ $json.body.url }}",
+              "type": "string"
+            },
+            {
+              "id": "b5ab4dec-2ed5-4ef5-a329-2415ad0e1251",
+              "name": "body.sheetName",
+              "value": "={{ $json.body.sheetName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -200,
+        160
+      ],
+      "id": "7bb93591-85e0-43d6-9333-525adcb3b72a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        20,
+        160
+      ],
+      "id": "a5070878-0c37-4c66-b767-1088f32e427e",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Flatten Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Data": {
+      "main": [
+        [
+          {
+            "node": "Clean Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET | Get Length",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ID": {
+      "main": [
+        [
+          {
+            "node": "Merge ID & Columns Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Columns": {
+      "main": [
+        [
+          {
+            "node": "Merge ID & Columns Name",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Clean Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Columns",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Length": {
+      "main": [
+        [
+          {
+            "node": "Merge Id & Columns Name & Last Row",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge All Data1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Col to Delete": {
+      "main": [
+        [
+          {
+            "node": "POST | Delete Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET | Get Length": {
+      "main": [
+        [
+          {
+            "node": "Count Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Id & Columns Name & Last Row": {
+      "main": [
+        [
+          {
+            "node": "PUT | Columns Name",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST | Style Columns",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Count Col to Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge ID & Columns Name": {
+      "main": [
+        [
+          {
+            "node": "Merge Id & Columns Name & Last Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PUT | Columns Name": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Data1": {
+      "main": [
+        [
+          {
+            "node": "Map Data for Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Data for Sheet": {
+      "main": [
+        [
+          {
+            "node": "PUT | Append Data to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "58ec1d9e-3b7d-4384-8981-7f6a2189eda9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d0151dd8147ef4ee641c96a3c41194b7e3a63fac35a49bcf7702fcca4a157656"
+  },
+  "id": "HxF37mmgP8YlqJa7",
+  "tags": []
+}

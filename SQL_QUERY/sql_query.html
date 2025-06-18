@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Response Logger</title>
+  </head>
+  <body>
+    <form>
+      <h1>API Response Logger</h1>
+      <label for="url">Enter URL</label>
+      <input
+        type="text"
+        id="url"
+        name="url_to_fetch"
+        placeholder="e.g., https://api.github.com/users/octocat"
+      />
+      <br />
+      <br />
+      <button id="fetch-data">Fetch Data</button>
+      <button id="send-webhook" type="button" disabled>Send to Webhook</button>
+    </form>
+    <div id="result"></div>
+    <div id="message"></div>
+  </body>
+  <script>
+    const fetchButton = document.getElementById("fetch-data");
+    const sendButton = document.getElementById("send-webhook");
+    const messageDiv = document.getElementById("message");
+    const resultDiv = document.getElementById("result");
+    let fetchedData = null;
+
+    const fetchData = async (event) => {
+      event.preventDefault(); // Zatrzymaj domyślne zachowanie formularza
+
+      messageDiv.innerHTML = "";
+      resultDiv.innerHTML = "";
+      sendButton.disabled = true;
+
+      const form = event.target.closest("form"); // Znajdź formularz, do którego należy przycisk
+      const formData = new FormData(form); // Stwórz FormData z formularza
+      const url = formData.get("url_to_fetch"); // Pobierz URL z FormData
+
+      try {
+        new URL(url);
+        messageDiv.innerHTML = `<p>Fetching data...</p>`;
+
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok)
+          throw new Error(`${response.status}: ${response.statusText}`);
+
+        fetchedData = await response.json();
+        messageDiv.innerHTML = `<p>Data fetched successfully!</p>`;
+        sendButton.disabled = false;
+      } catch (error) {
+        messageDiv.innerHTML = `<p>Error fetching data: ${error.message}</p>`;
+        fetchedData = null;
+      }
+    };
+
+    const sendToWebhook = async () => {
+      messageDiv.innerHTML = "";
+
+      if (!fetchedData) {
+        messageDiv.innerHTML = `<p>No data to send. Please fetch data first.</p>`;
+        return;
+      }
+
+      messageDiv.innerHTML = `<p>Sending data to webhook...</p>`;
+
+      try {
+        const response = await fetch(
+          "https://marekbrzostowicz.app.n8n.cloud/webhook-test/test",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }, // Tutaj Content-Type jest potrzebny!
+            body: JSON.stringify({ data: fetchedData }),
+          }
+        );
+
+        if (!response.ok)
+          throw new Error(`${response.status}: ${response.statusText}`);
+
+        messageDiv.innerHTML = `<p>Data sent to webhook successfully!</p>`;
+        sendButton.disabled = true;
+        fetchedData = null;
+      } catch (error) {
+        messageDiv.innerHTML = `<p>Error sending data to webhook: ${error.message}</p>`;
+      }
+    };
+
+    fetchButton.addEventListener("click", fetchData);
+    sendButton.addEventListener("click", sendToWebhook);
+  </script>
+</html>
