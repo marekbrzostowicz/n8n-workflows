@@ -77,3 +77,10 @@ This sheet will contain the **execution results** from the workflow. The workflo
 ![Results Sheet Example](https://github.com/user-attachments/assets/1ce7f2e0-6532-4965-9173-617de4a8961d)
 
 _____
+
+# API Response Logger
+
+**vworkflow to retrieve responses from GET requests and display them in a readable format in google sheets**
+
+![image](https://github.com/user-attachments/assets/7e610189-9d1e-4526-8806-26b0a802c83a)
+
