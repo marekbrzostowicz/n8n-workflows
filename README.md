@@ -37,7 +37,7 @@ This workflow automates data extraction from Google Sheets, processes it through
 
 ### 4. Configure HTML Interface
 
-1. **Download** the `index.html` file
+1. **Download** the `sql_query.html` file
 2. **Update the following in the file**:
    - **Webhook URL**: Replace with your n8n webhook URL
    - Update the form action:
@@ -48,6 +48,14 @@ This workflow automates data extraction from Google Sheets, processes it through
        id="form"
      >
      ```
+   - Update URL in script:
+      ```html
+      try {
+        const response = await fetch("https://your-webhook-url-here", {
+          method: "POST",
+          body: formData,
+        });
+      ```
 3. **Host the HTML file** on your web server or **open it locally**
 
 ## Form Configuration
