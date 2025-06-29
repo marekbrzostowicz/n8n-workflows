@@ -31,15 +31,15 @@
     let fetchedData = null;
 
     const fetchData = async (event) => {
-      event.preventDefault(); // Zatrzymaj domyślne zachowanie formularza
+      event.preventDefault();
 
       messageDiv.innerHTML = "";
       resultDiv.innerHTML = "";
       sendButton.disabled = true;
 
-      const form = event.target.closest("form"); // Znajdź formularz, do którego należy przycisk
-      const formData = new FormData(form); // Stwórz FormData z formularza
-      const url = formData.get("url_to_fetch"); // Pobierz URL z FormData
+      const form = event.target.closest("form");
+      const formData = new FormData(form);
+      const url = formData.get("url_to_fetch");
 
       try {
         new URL(url);
@@ -73,7 +73,7 @@
           "https://marekbrzostowicz.app.n8n.cloud/webhook-test/test",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" }, // Tutaj Content-Type jest potrzebny!
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: fetchedData }),
           }
         );
